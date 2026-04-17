@@ -3,12 +3,12 @@ import React, { useState } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
-import Dashboard from '../pages/Dashboard';
-import Menu from '../pages/Menu';
-import SalesReport from '../pages/SalesReport';
-import Setting from '../pages/Setting';
+import Dashboard from '../layouts/Dashboard';
+import SalesReport from '../layouts/SalesReport';
+import Setting from '../layouts/Setting';
+import CatalougeAdmin from '../layouts/CatalougueAdmin';
 
-const MainLayout = () => {
+const MainContent = () => {
   const navigate = useNavigate();
   const [showPage, setShowPage] = useState(true);
 
@@ -43,7 +43,7 @@ const MainLayout = () => {
             <Routes>
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
               <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/menu" element={<Menu />} />
+              <Route path="/menu" element={<CatalougeAdmin />} />
               <Route path="/sales" element={<SalesReport />} />
               <Route path="/setting" element={<Setting />} />
             </Routes>
@@ -67,4 +67,4 @@ const MainLayout = () => {
   );
 };
 
-export default MainLayout;
+export default MainContent;

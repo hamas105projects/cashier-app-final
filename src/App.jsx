@@ -4,7 +4,7 @@ import Login from "./pages/login";
 import Register from "./pages/register";
 import ForgotPassword from "./pages/ForgotPassword"; // opsional
 import PrivateRoute from "./hooks/PrivateRoute";
-import MainLayout from "./layouts/MainLayout"; // layout yang sudah dibuat sebelumnya
+import MainLayout from "./pages/MainContent"; // layout yang sudah dibuat sebelumnya
 
 function App() {
   return (

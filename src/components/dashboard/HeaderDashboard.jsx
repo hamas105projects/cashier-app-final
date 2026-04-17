@@ -1,10 +1,10 @@
-import billIcon from '../assets/images/billDashboard.png';
-import walletIcon from '../assets/images/walletDashboard.png';
-import listIcon from '../assets/images/listDashboard.png';
-import foodIcon from '../assets/images/foodDashboard.png';
-import beverageIcon from '../assets/images/beverageDashboard.png';
-import dessertIcon from '../assets/images/dessertDashboard.png';
-import expandIcon from '../assets/images/expand-arrows.png';
+import billIcon from '../../assets/images/billDashboard.png';
+import walletIcon from '../../assets/images/walletDashboard.png';
+import listIcon from '../../assets/images/listDashboard.png';
+import foodIcon from '../../assets/images/foodDashboard.png';
+import beverageIcon from '../../assets/images/beverageDashboard.png';
+import dessertIcon from '../../assets/images/dessertDashboard.png';
+import expandIcon from '../../assets/images/expand-arrows.png';
 
 const HeaderDashboard = () => {
   const cardsData = [
