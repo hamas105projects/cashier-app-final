@@ -1,7 +1,21 @@
 import avatarImage from '../assets/images/avatar.png';
-import ExitIcon from '../assets/images/exit-icon.svg?react'; // Added import
+import ExitIcon from '../assets/images/exit-icon.svg?react';
 
 const Header = ({ userName = 'Admin User', onLogout }) => {
+  
+  // Handle logout
+  const handleLogout = () => {
+    console.log('=== LOGOUT ===');
+    
+    // Panggil onLogout jika ada (ini akan handle logout dari authStore)
+    if (onLogout) {
+      onLogout();
+    } else {
+      // Redirect ke login page
+      window.location.href = '/login';
+    }
+  };
+  
   return (
     <header style={styles.header}>
       <input type="text" placeholder="Cari produk..." style={styles.search} />
@@ -9,9 +23,10 @@ const Header = ({ userName = 'Admin User', onLogout }) => {
         <img src={avatarImage} alt="avatar" style={styles.avatar} />
         <span style={styles.userName}>{userName}</span>
         <button
-          onClick={onLogout}
+          onClick={handleLogout}
           style={styles.logoutBtn}
           aria-label="Logout"
+          title="Logout"
         >
           <ExitIcon style={styles.icon} />
         </button>
@@ -59,14 +74,17 @@ const styles = {
     background: 'none',
     border: 'none',
     cursor: 'pointer',
-    padding: '4px',
+    padding: '8px',
     borderRadius: '50%',
     transition: 'background-color 0.2s',
+    ':hover': {
+      backgroundColor: '#f0f0f0'
+    }
   },
   icon: {
     width: '20px',
     height: '20px',
-    fill: '#666', // Adjust color as needed
+    fill: '#666',
   },
 };
 

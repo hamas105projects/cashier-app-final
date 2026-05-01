@@ -1,9 +1,14 @@
 // src/pages/Register.jsx
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import BackgroundAuth from "../components/BackgroundAuth";
+import { register } from "../services/api"; // Import fungsi register
 
 function Register() {
+  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  
   const styles = {
     main: {
       width: '100%',
@@ -93,6 +98,10 @@ function Register() {
       transform: 'scale(1.02)',
       background: 'linear-gradient(135deg, #1d4ed8, #1e3a8a)'
     },
+    buttonDisabled: {
+      opacity: 0.7,
+      cursor: 'not-allowed'
+    },
     loginText: {
       textAlign: 'center',
       marginTop: '24px',
@@ -109,31 +118,95 @@ function Register() {
       marginBottom: '16px',
       padding: '12px',
       borderRadius: '8px',
-      background: 'rgba(239, 68, 68, 0.2)',
-      border: '1px solid rgba(239, 68, 68, 0.5)',
-      color: '#fecaca',
+      background: '#fee2e2',
+      border: '1px solid #fecaca',
+      color: '#dc2626',
+      fontSize: '14px'
+    },
+    successMessage: {
+      marginBottom: '16px',
+      padding: '12px',
+      borderRadius: '8px',
+      background: '#dcfce7',
+      border: '1px solid #bbf7d0',
+      color: '#16a34a',
       fontSize: '14px'
     }
   };
 
   const [formData, setFormData] = useState({
-    fullName: '',
+    name: '', // Ubah dari fullName ke name (sesuai API)
     email: '',
     password: '',
     confirmPassword: ''
   });
+
+  const [successMessage, setSuccessMessage] = useState("");
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
     });
+    // Hapus error saat user mulai mengetik
+    if (error) setError("");
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Handle registration logic here
-    console.log('Register data:', formData);
+    setError("");
+    setSuccessMessage("");
+    
+    // Validasi password match
+    if (formData.password !== formData.confirmPassword) {
+      setError("Password dan Confirm Password tidak cocok");
+      return;
+    }
+
+    // Validasi minimal panjang password
+    if (formData.password.length < 6) {
+      setError("Password minimal 6 karakter");
+      return;
+    }
+    
+    setIsLoading(true);
+    
+    try {
+      // Kirim data ke API sesuai dengan format yang diharapkan backend
+      await register({
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+        phone: "", // Optional, bisa diisi nanti di profile
+        role: "cashier" // Default role, admin bisa diubah oleh admin lain
+      });
+      
+      // Jika sukses
+      setSuccessMessage("Registrasi berhasil! Silakan login.");
+      
+      // Reset form
+      setFormData({
+        name: '',
+        email: '',
+        password: '',
+        confirmPassword: ''
+      });
+      
+      // Redirect ke login setelah 2 detik
+      setTimeout(() => {
+        navigate('/login');
+      }, 2000);
+      
+    } catch (err) {
+      // Tangani error dari API
+      if (err.message.includes("Email already registered")) {
+        setError("Email sudah terdaftar. Silakan gunakan email lain.");
+      } else {
+        setError(err.message || "Registrasi gagal. Silakan coba lagi.");
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -152,18 +225,24 @@ function Register() {
 
           {/* Form */}
           <form onSubmit={handleSubmit} style={{ width: '80%', margin: '10px auto' }}>
-            {/* Full Name */}
+            {/* Tampilkan error jika ada */}
+            {error && <div style={styles.errorMessage}>{error}</div>}
+            
+            {/* Tampilkan success jika ada */}
+            {successMessage && <div style={styles.successMessage}>{successMessage}</div>}
+
+            {/* Full Name - ubah name dari fullName ke name */}
             <div style={styles.formGroup}>
-              <label htmlFor="fullName" style={styles.label}>
+              <label htmlFor="name" style={styles.label}>
                 Full Name
               </label>
               <input
                 type="text"
-                id="fullName"
-                name="fullName"
+                id="name"
+                name="name" // Ubah dari fullName ke name
                 placeholder="John Doe"
                 style={styles.input}
-                value={formData.fullName}
+                value={formData.name}
                 onChange={handleChange}
                 onFocus={(e) => {
                   e.target.style.borderColor = styles.inputFocus.borderColor;
@@ -252,20 +331,28 @@ function Register() {
               />
             </div>
 
-            {/* Submit Button */}
+            {/* Submit Button - tambahkan disabled saat loading */}
             <button
               type="submit"
-              style={styles.button}
+              style={{
+                ...styles.button,
+                ...(isLoading ? styles.buttonDisabled : {})
+              }}
+              disabled={isLoading}
               onMouseEnter={(e) => {
-                e.target.style.transform = styles.buttonHover.transform;
-                e.target.style.background = styles.buttonHover.background;
+                if (!isLoading) {
+                  e.target.style.transform = styles.buttonHover.transform;
+                  e.target.style.background = styles.buttonHover.background;
+                }
               }}
               onMouseLeave={(e) => {
-                e.target.style.transform = 'scale(1)';
-                e.target.style.background = styles.button.background;
+                if (!isLoading) {
+                  e.target.style.transform = 'scale(1)';
+                  e.target.style.background = styles.button.background;
+                }
               }}
             >
-              Register
+              {isLoading ? 'Loading...' : 'Register'}
             </button>
 
             {/* Login Link */}

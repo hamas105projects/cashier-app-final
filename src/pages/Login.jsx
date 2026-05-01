@@ -1,32 +1,30 @@
 import BackgroundAuth from "../components/BackgroundAuth";
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuthStore } from '../stores/authStore'; // Tambahkan ini
 
 function Login() {
   const navigate = useNavigate();
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState(''); // Ubah dari username ke email
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  
+  // Ambil fungsi login dari store
+  const login = useAuthStore((state) => state.login);
+  const isLoading = useAuthStore((state) => state.isLoading);
 
-  // User palsu (untuk testing)
-  const fakeUser = {
-    username: 'test',
-    password: 'test123'
-  };
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => { // Tambah async
     e.preventDefault();
     setError('');
 
-    // Validasi sederhana
-    if (username === fakeUser.username && password === fakeUser.password) {
-      // Simpan status login (contoh menggunakan localStorage)
-      localStorage.setItem('isAuthenticated', 'true');
-      localStorage.setItem('user', JSON.stringify({ username: fakeUser.username }));
-      // Redirect ke halaman dashboard
+    // Panggil API login
+    const result = await login(email, password);
+    
+    if (result.success) {
+      // Redirect ke dashboard
       navigate('/dashboard');
     } else {
-      setError('Username atau password salah');
+      setError(result.error || 'Email atau password salah');
     }
   };
 
@@ -54,7 +52,7 @@ function Login() {
       height: '50px',
       borderRadius: '50%',
       background: 'linear-gradient(135deg, #4C3BCF, #3572EF)',
-      display: 'inline-flex',  // Ubah ke inline-flex
+      display: 'inline-flex',
       justifyContent: 'center',
       alignItems: 'center',
       fontSize: '24px',
@@ -144,6 +142,10 @@ function Login() {
       transform: 'scale(1.02)',
       background: 'linear-gradient(135deg, #1d4ed8, #1e3a8a)'
     },
+    buttonDisabled: {
+      opacity: 0.7,
+      cursor: 'not-allowed'
+    },
     signupText: {
       textAlign: 'center',
       marginTop: '24px',
@@ -160,9 +162,9 @@ function Login() {
       marginBottom: '16px',
       padding: '12px',
       borderRadius: '8px',
-      background: 'rgba(239, 68, 68, 0.2)',
-      border: '1px solid rgba(239, 68, 68, 0.5)',
-      color: '#fecaca',
+      background: '#fee2e2',
+      border: '1px solid #fecaca',
+      color: '#dc2626',
       fontSize: '14px'
     }
   };
@@ -181,7 +183,7 @@ function Login() {
               <h1 style={styles.companyName}>Padipos</h1>
             </div>
             <h2 style={styles.title}>Welcome Back!</h2>
-            <p style={styles.subtitle}>Please enter your username and password here!</p>
+            <p style={styles.subtitle}>Please enter your email and password here!</p>
           </div>
 
           
@@ -190,18 +192,18 @@ function Login() {
             {/* Tampilkan error jika ada */}
             {error && <div style={styles.errorMessage}>{error}</div>}
 
-            {/* Username Input */}
+            {/* Email Input - ubah dari username ke email */}
             <div style={styles.formGroup}>
-              <label htmlFor="username" style={styles.label}>
-                Username
+              <label htmlFor="email" style={styles.label}>
+                Email Address
               </label>
               <input
-                type="text"
-                id="username"
-                name="username"
-                placeholder="you@example.com"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                type="email"
+                id="email"
+                name="email"
+                placeholder="admin@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 style={styles.input}
                 onFocus={(e) => {
                   e.target.style.borderColor = styles.inputFocus.borderColor;
@@ -251,20 +253,28 @@ function Login() {
               </a>
             </div>
 
-            {/* Submit Button */}
+            {/* Submit Button - tambahkan disabled saat loading */}
             <button
               type="submit"
-              style={styles.button}
+              style={{
+                ...styles.button,
+                ...(isLoading ? styles.buttonDisabled : {})
+              }}
+              disabled={isLoading}
               onMouseEnter={(e) => {
-                e.target.style.transform = styles.buttonHover.transform;
-                e.target.style.background = styles.buttonHover.background;
+                if (!isLoading) {
+                  e.target.style.transform = styles.buttonHover.transform;
+                  e.target.style.background = styles.buttonHover.background;
+                }
               }}
               onMouseLeave={(e) => {
-                e.target.style.transform = 'scale(1)';
-                e.target.style.background = styles.button.background;
+                if (!isLoading) {
+                  e.target.style.transform = 'scale(1)';
+                  e.target.style.background = styles.button.background;
+                }
               }}
             >
-              Sign In
+              {isLoading ? 'Loading...' : 'Sign In'}
             </button>
 
             {/* Sign Up Link */}

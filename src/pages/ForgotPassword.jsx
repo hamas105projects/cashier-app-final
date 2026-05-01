@@ -145,7 +145,7 @@ function ForgotPassword() {
       // await api.forgotPassword(email);
       setMessage("Password reset link has been sent to your email");
       setEmail("");
-    } catch (err) {
+    } catch {
       setError("Failed to send reset link. Please try again.");
     }
   };
