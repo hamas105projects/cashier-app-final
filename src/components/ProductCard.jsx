@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import maximizeIcon from '../assets/images/maximize.png';
 
-const ProductCard = ({ menu, onAddToBill }) => {
+const ProductCard = ({ menu, onAddToBill, onClick }) => { // TAMBAH prop onClick
   const [imageError, setImageError] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -12,23 +12,35 @@ const ProductCard = ({ menu, onAddToBill }) => {
   const getImageSrc = () => {
     if (menu.imageFile && !imageError) {
       if (typeof menu.imageFile === 'string') {
-        return menu.imageFile;
+        // Cek apakah URL lengkap atau relative path
+        if (menu.imageFile.startsWith('http')) {
+          return menu.imageFile;
+        }
+        return `http://localhost:3000${menu.imageFile}`; // Sesuaikan dengan base URL API
       } else if (menu.imageFile instanceof File) {
         return URL.createObjectURL(menu.imageFile);
       }
+    }
+    // FALLBACK: cek urlpathImage dari API
+    if (menu.urlpathImage) {
+      return `http://localhost:3000${menu.urlpathImage}`;
     }
     return '/images/mi-ayam.webp';
   };
 
   const handleOpenModal = (e) => {
-    e.stopPropagation(); // biar gak trigger add to bill
+    e.stopPropagation();
     setIsModalOpen(true);
   };
 
   const handleCloseModal = () => setIsModalOpen(false);
 
   const handleCardClick = () => {
-    if (onAddToBill) onAddToBill(menu);
+    if (onClick) {
+      onClick(menu); // Panggil onClick (untuk admin/edit)
+    } else if (onAddToBill) {
+      onAddToBill(menu); // Panggil onAddToBill (untuk customer)
+    }
   };
 
   return (
@@ -102,7 +114,6 @@ const ProductCard = ({ menu, onAddToBill }) => {
               <span style={{ color: "#94a3b8", fontSize: "11px", fontWeight: "500" }}>/porsi</span>
             </div>
 
-            {/* Maximize Icon Button - stopPropagation biar gak nambah menu */}
             <button
               onClick={handleOpenModal}
               style={{
@@ -124,7 +135,7 @@ const ProductCard = ({ menu, onAddToBill }) => {
         </div>
       </div>
 
-      {/* Modal preview */}
+      {/* Modal preview - SAMA seperti sebelumnya */}
       {isModalOpen && (
         <div
           style={{

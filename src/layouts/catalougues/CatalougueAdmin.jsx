@@ -1,96 +1,30 @@
-import React, { useState } from "react";
-import AddMenuForm from "./AddMenu";
+import React, { useState, useCallback } from "react";
+import SettingMenu from "./SettingMenu";
 import MenuCard from "../../components/ProductCard";
+import useProducts from "../../hooks/useProducts";
 import foodIcon from '../../assets/images/foodDashboard.png';
 import beverageIcon from '../../assets/images/beverageDashboard.png';
 import dessertIcon from '../../assets/images/dessertDashboard.png';
+import { createProduct, updateProduct, deleteProduct } from "../../services/api";
 
-const initialMenus = [
-  { 
-    id: 1, 
-    name: "Nasi Goreng", 
-    price: 25000, 
-    category: "Foods",
-    description: "Nasi goreng dengan bumbu rahasia, telur, dan kerupuk",
-    imageFile: null // Will use fallback image
-  },
-  { 
-    id: 2, 
-    name: "Sate Ayam", 
-    price: 30000, 
-    category: "Foods",
-    description: "10 tusuk sate ayam dengan bumbu kacang pilihan",
-    imageFile: null
-  },
-  { 
-    id: 3, 
-    name: "Es Teh", 
-    price: 5000, 
-    category: "Beverages",
-    description: "Teh manis segar dengan es batu",
-    imageFile: null
-  },
-  { 
-    id: 4, 
-    name: "Pisang Goreng", 
-    price: 15000, 
-    category: "Foods",
-    description: "Pisang goreng crispy dengan topping keju dan coklat",
-    imageFile: null
-  },
-  { 
-    id: 5, 
-    name: "Mie Goreng", 
-    price: 20000, 
-    category: "Foods",
-    description: "Mie goreng spesial dengan sayuran dan telur",
-    imageFile: null
-  },
-  { 
-    id: 6, 
-    name: "Es Jeruk", 
-    price: 8000, 
-    category: "Beverages",
-    description: "Jeruk peras segar tanpa pengawet",
-    imageFile: null
-  },
-  { 
-    id: 7, 
-    name: "Lumpia", 
-    price: 12000, 
-    category: "Foods",
-    description: "Lumpia basah dengan isi rebung dan ayam",
-    imageFile: null
-  },
-  { 
-    id: 8, 
-    name: "Ayam Bakar", 
-    price: 35000, 
-    category: "Foods",
-    description: "Ayam bakar dengan bumbu tradisional, sambal, dan lalapan",
-    imageFile: null
-  },
-  { 
-    id: 9, 
-    name: "Cheesecake", 
-    price: 28000, 
-    category: "Dessert",
-    description: "New york cheesecake dengan saus strawberry",
-    imageFile: null
-  },
-  { 
-    id: 10, 
-    name: "Pudding Coklat", 
-    price: 18000, 
-    category: "Dessert",
-    description: "Pudding coklat lembut dengan vla vanilla",
-    imageFile: null
-  },
-];
+// CONSTANTS DI LUAR KOMPONEN
+const CATEGORY_MAP = {
+  'Foods': 'food',
+  'Beverages': 'beverage',
+  'Dessert': 'dessert',
+};
+
+const CATEGORY_TO_FRONTEND = {
+  'food': 'Foods',
+  'beverage': 'Beverages',
+  'dessert': 'Dessert',
+};
 
 const CatalougeAdmin = () => {
-  const [menus, setMenus] = useState(initialMenus);
   const [activeCategory, setActiveCategory] = useState("All");
+  const [editingMenu, setEditingMenu] = useState(null);
+  
+  const { products, loading, error, refetch } = useProducts();
 
   const categories = [
     { name: "All", icon: null },
@@ -99,31 +33,119 @@ const CatalougeAdmin = () => {
     { name: "Dessert", icon: dessertIcon },
   ];
 
-  const filteredMenus =
-    activeCategory === "All"
-      ? menus
-      : menus.filter((m) => m.category === activeCategory);
+  // Langsung map
+  const menus = products.map(p => ({
+    ...p,
+    category: CATEGORY_TO_FRONTEND[p.category] || p.category,
+    price: Number(p.price)
+  }));
 
-  const handleAddMenu = (newMenuData) => {
-    const newId = menus.length + 1;
-    setMenus([
-      ...menus,
-      {
-        id: newId,
-        name: newMenuData.name,
-        category: newMenuData.category,
-        price: Number(newMenuData.price),
-        description: newMenuData.description,
-        imageFile: newMenuData.imageFile,
-      },
-    ]);
-    alert("Menu berhasil ditambahkan");
+  const filteredMenus = activeCategory === "All"
+    ? menus
+    : menus.filter((m) => m.category === activeCategory);
+
+  const handleAddMenu = useCallback(async (newMenuData) => {
+    try {
+      const formData = new FormData();
+      formData.append('name', newMenuData.name);
+      formData.append('category', CATEGORY_MAP[newMenuData.category]);
+      formData.append('price', Number(newMenuData.price));
+      
+      if (newMenuData.description) {
+        formData.append('description', newMenuData.description);
+      }
+      if (newMenuData.imageFile && newMenuData.imageFile instanceof File) {
+        formData.append('image', newMenuData.imageFile);
+      }
+
+      await createProduct(formData);
+      alert("Menu berhasil ditambahkan");
+      await refetch();
+      setEditingMenu(null);
+    } catch (error) {
+      console.error("Add menu failed:", error);
+      alert("Gagal menambahkan menu: " + error.message);
+    }
+  }, [refetch]); // <-- DEPENDENCY ONLY refetch
+
+  const handleUpdateMenu = useCallback(async (updatedMenuData) => {
+    if (!editingMenu) return;
+    
+    try {
+      const formData = new FormData();
+      formData.append('name', updatedMenuData.name);
+      formData.append('category', CATEGORY_MAP[updatedMenuData.category]);
+      formData.append('price', Number(updatedMenuData.price));
+      
+      if (updatedMenuData.description) {
+        formData.append('description', updatedMenuData.description);
+      }
+      if (updatedMenuData.imageFile && updatedMenuData.imageFile instanceof File) {
+        formData.append('image', updatedMenuData.imageFile);
+      }
+
+      await updateProduct(editingMenu.id, formData);
+      alert("Menu berhasil diupdate");
+      await refetch();
+      setEditingMenu(null);
+    } catch (error) {
+      console.error("Update menu failed:", error);
+      alert("Gagal mengupdate menu: " + error.message);
+    }
+  }, [editingMenu, refetch]); // <-- DEPENDENCY editingMenu & refetch
+
+  const handleDeleteMenu = useCallback(async (productId) => {
+    try {
+      await deleteProduct(productId);
+      alert("Menu berhasil dihapus");
+      await refetch();
+      setEditingMenu(null);
+    } catch (error) {
+      console.error("Delete menu failed:", error);
+      alert("Gagal menghapus menu: " + error.message);
+    }
+  }, [refetch]);
+
+  const handleEditClick = (menu) => {
+    setEditingMenu(menu);
   };
+
+  const handleCancelEdit = () => {
+    setEditingMenu(null);
+  };
+
+  if (loading) {
+    return (
+      <div style={{ padding: 50, textAlign: "center" }}>
+        <div>Loading menu...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={{ padding: 50, textAlign: "center" }}>
+        <div style={{ color: "red", marginBottom: "10px" }}>Error: {error}</div>
+        <button 
+          onClick={refetch}
+          style={{
+            padding: "8px 16px",
+            background: "#3572EF",
+            color: "white",
+            border: "none",
+            borderRadius: "8px",
+            cursor: "pointer"
+          }}
+        >
+          Coba Lagi
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div style={{ width: "98%", padding: "20px", borderRadius: "24px" }}>
       <div style={{ display: "flex", gap: "24px", alignItems: "flex-start" }}>
-        {/* KOLOM KIRI: daftar menu */}
         <div style={{ flex: "7" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
             <h1 style={{ fontSize: "20px", margin: 0 }}>List Menu</h1>
@@ -132,7 +154,6 @@ const CatalougeAdmin = () => {
             </span>
           </div>
 
-          {/* Filter kategori */}
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "20px", gap: "12px" }}>
             {categories.map((cat) => (
               <button
@@ -160,10 +181,7 @@ const CatalougeAdmin = () => {
                     style={{
                       width: "18px", 
                       height: "18px",
-                      // Ikon berubah menjadi putih saat kategori aktif
-                      filter: activeCategory === cat.name 
-                        ? "brightness(0) invert(1)"  // Warna putih saat aktif
-                        : "none"  // Warna asli saat tidak aktif
+                      filter: activeCategory === cat.name ? "brightness(0) invert(1)" : "none"
                     }} 
                   />
                 )}
@@ -172,17 +190,25 @@ const CatalougeAdmin = () => {
             ))}
           </div>
 
-          {/* Grid menu */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px", margin: "0 -13px" }}>
             {filteredMenus.map((menu) => (
-              <MenuCard key={menu.id} menu={menu} />
+              <MenuCard 
+                key={menu.id} 
+                menu={menu} 
+                onClick={() => handleEditClick(menu)}
+              />
             ))}
           </div>
         </div>
 
-        {/* KOLOM KANAN: Form Tambah Menu */}
         <div style={{ flex: "2.4" }}>
-          <AddMenuForm onSave={handleAddMenu} />
+          <SettingMenu 
+            onSave={handleAddMenu}
+            onUpdate={handleUpdateMenu}
+            onDelete={handleDeleteMenu}
+            editingMenu={editingMenu}
+            onCancel={handleCancelEdit}
+          />
         </div>
       </div>
     </div>
